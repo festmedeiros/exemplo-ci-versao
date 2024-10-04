@@ -84,4 +84,3 @@ jobs:
           git commit -m "chore(release): version ${{ env.new_version }}"
           git tag v${{ env.new_version }}
           git push https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }} HEAD:master --tags
-
