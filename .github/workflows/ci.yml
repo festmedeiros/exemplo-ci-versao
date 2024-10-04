@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checar repositório
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Configurar Node.js
         uses: actions/setup-node@v2
@@ -83,4 +85,4 @@ jobs:
           git add package.json
           git commit -m "chore(release): version ${{ env.new_version }}"
           git tag v${{ env.new_version }}
-          git push https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }} HEAD:master --tags
+          git push origin master --tags
