@@ -75,10 +75,12 @@ jobs:
           npm version ${{ env.new_version }} --no-git-tag-version
           
       - name: Commit e push
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add package.json
           git commit -m "chore(release): version ${{ env.new_version }}"
           git tag v${{ env.new_version }}
-          git push origin master --tags
+          git push https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }} HEAD:master --tags
