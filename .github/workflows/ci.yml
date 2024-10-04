@@ -1,89 +1,78 @@
-name: Pipeline CI
+name: Versionamento Semântico
 
 on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
-
-permissions:
-  contents: write
 
 jobs:
-  build:
+  version:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checar repositório
         uses: actions/checkout@v2
 
-      - name: Configurando Node
+      - name: Configurar Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '22'
+          node-version: '14'
 
-      - name: Instalando dependências
+      - name: Instalar dependências
         run: npm install
 
-      #- name: Lint code
-      #  run: npm run lint
+      - name: Instalar semver
+        run: npm install -g semver
 
-      - name: Build
-        run: npm run build
+      - name: Calcular nova versão
+        id: version
+        run: |
+          git fetch --tags
+          CURRENT_VERSION=$(git describe --tags --abbrev=0)
+          echo "Versão Atual: $CURRENT_VERSION"
+          
+          # Obtendo mensagens de commit
+          COMMITS=$(git log ${CURRENT_VERSION}..HEAD --pretty=format:"%s")
+          
+          # Inicializando variáveis
+          MAJOR=0
+          MINOR=0
+          PATCH=0
+          
+          # Analisando mensagens de commit
+          for COMMIT in $COMMITS; do
+            if [[ $COMMIT == *"BREAKING CHANGE"* ]]; then
+              MAJOR=1
+            elif [[ $COMMIT == *"feat"* ]]; then
+              MINOR=1
+            elif [[ $COMMIT == *"fix"* ]]; then
+              PATCH=1
+            fi
+          done
+          
+          # Calculando a nova versão usando semver
+          NEW_VERSION=$CURRENT_VERSION
+          if [[ $MAJOR -eq 1 ]]; then
+            NEW_VERSION=$(semver -i major $CURRENT_VERSION)
+          elif [[ $MINOR -eq 1 ]]; then
+            NEW_VERSION=$(semver -i minor $CURRENT_VERSION)
+          elif [[ $PATCH -eq 1 ]]; then
+            NEW_VERSION=$(semver -i patch $CURRENT_VERSION)
+          fi
+          
+          echo "Nova versão: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Test
-        run: npm test
-
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
-
-#- name: Check Coverage
-#  run: npx jest --coverage --coverageThreshold="{\"global\":{\"branches\":80,\"functions\":80,\"lines\":80,\"statements\":80}}"
-
-#name: Pipeline CI
-#
-#on:
-#  push:
-#    branches:
-#      - master
-#  pull_request:
-#    branches:
-#      - master
-#
-#jobs:
-#  build:
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
-#
-#      - name: Configurando Node
-#        uses: actions/setup-node@v2
-#        with:
-#          node-version: '22'
-#
-#      - name: Instalando dependências
-#        run: npm install
-#
-#      #- name: Lint code
-#      #  run: npm run lint
-#
-#      - name: Build
-#        run: npm run build
-#
-#      - name: Test
-#        run: npm test
-#      
-#      - name: Release
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      run: npm semantic-release
-#
-#      #- name: Check Coverage
-#      #  run: npx jest --coverage --coverageThreshold="{\"global\":{\"branches\":80,\"functions\":80,\"lines\":80,\"statements\":80}}"
+      - name: Atualizar versão no package.json
+        run: |
+          npm version ${{ env.new_version }} --no-git-tag-version
+          
+      - name: Commit e push
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add package.json
+          git commit -m "chore(release): version ${{ env.new_version }}"
+          git tag v${{ env.new_version }}
+          git push origin master --tags
+          
