@@ -14,7 +14,7 @@ app.get('/api/test', (req, res) => {
 });
 
 app.get('/api/test-2', (req, res) => {
-  res.send({ message: 'Endpoint de teste 23'});
+  res.send({ message: 'Endpoint de teste 233'});
 });
 
 app.listen(port, () => {
