@@ -31,8 +31,14 @@ jobs:
           TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Versão Atual: $TAG"
           
-          # Obtendo mensagens de commit
-          COMMITS=$(git log ${TAG}..HEAD --pretty=format:"%s")
+          if [ "$TAG" = "v0.0.0" ]; then
+            COMMITS=$(git log --pretty=format:"%s")
+          else
+            COMMITS=$(git log ${TAG}..HEAD --pretty=format:"%s")
+          fi
+          
+          echo "Commits desde a última tag:"
+          echo "$COMMITS"
           
           # Inicializando variáveis
           MAJOR=0
