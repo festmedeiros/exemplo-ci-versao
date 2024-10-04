@@ -1,0 +1,89 @@
+name: Pipeline CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configurando Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '22'
+
+      - name: Instalando dependências
+        run: npm install
+
+      #- name: Lint code
+      #  run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
+
+#- name: Check Coverage
+#  run: npx jest --coverage --coverageThreshold="{\"global\":{\"branches\":80,\"functions\":80,\"lines\":80,\"statements\":80}}"
+
+#name: Pipeline CI
+#
+#on:
+#  push:
+#    branches:
+#      - master
+#  pull_request:
+#    branches:
+#      - master
+#
+#jobs:
+#  build:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v2
+#
+#      - name: Configurando Node
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: '22'
+#
+#      - name: Instalando dependências
+#        run: npm install
+#
+#      #- name: Lint code
+#      #  run: npm run lint
+#
+#      - name: Build
+#        run: npm run build
+#
+#      - name: Test
+#        run: npm test
+#      
+#      - name: Release
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      run: npm semantic-release
+#
+#      #- name: Check Coverage
+#      #  run: npx jest --coverage --coverageThreshold="{\"global\":{\"branches\":80,\"functions\":80,\"lines\":80,\"statements\":80}}"
