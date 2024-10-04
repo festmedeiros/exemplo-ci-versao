@@ -1,6 +1,6 @@
 {
   "name": "api-exemplo",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "API Exemplo",
   "main": "src/index.js",
   "scripts": {
