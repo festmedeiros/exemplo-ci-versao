@@ -13,7 +13,7 @@ jobs:
       - name: Checar repositório
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0 # Garantir que todas as tags sejam buscadas
 
       - name: Configurar Node.js
         uses: actions/setup-node@v2
@@ -30,13 +30,16 @@ jobs:
         id: version
         run: |
           git fetch --tags
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Versão Atual: $TAG"
+          LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          if [ -z "$LAST_TAG" ]; then
+            LAST_TAG="v0.0.0"
+          fi
+          echo "Versão Atual: $LAST_TAG"
           
-          if [ "$TAG" = "v0.0.0" ]; then
+          if [ "$LAST_TAG" = "v0.0.0" ]; then
             COMMITS=$(git log --pretty=format:"%s")
           else
-            COMMITS=$(git log ${TAG}..HEAD --pretty=format:"%s")
+            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s")
           fi
           
           echo "Commits desde a última tag:"
@@ -48,18 +51,18 @@ jobs:
           PATCH=0
           
           # Analisando mensagens de commit
-          for COMMIT in $COMMITS; do
-            if [[ $COMMIT == *"BREAKING CHANGE"* ]]; then
+          for COMMIT in "$COMMITS"; do
+            if [[ "$COMMIT" == *"BREAKING CHANGE"* ]]; then
               MAJOR=1
-            elif [[ $COMMIT == *"feat"* ]]; then
+            elif [[ "$COMMIT" == *"feat"* ]]; then
               MINOR=1
-            elif [[ $COMMIT == *"fix"* ]]; then
+            elif [[ "$COMMIT" == *"fix"* ]]; then
               PATCH=1
             fi
           done
           
           # Calculando a nova versão usando semver
-          CURRENT_VERSION=${TAG#v}
+          CURRENT_VERSION=${LAST_TAG#v}
           NEW_VERSION=$CURRENT_VERSION
           if [[ $MAJOR -eq 1 ]]; then
             NEW_VERSION=$(semver -i major $CURRENT_VERSION)
@@ -85,4 +88,4 @@ jobs:
           git add package.json
           git commit -m "chore(release): version ${{ env.new_version }}"
           git tag v${{ env.new_version }}
-          git push origin master --tags
+          git push https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }} HEAD:master --tags
