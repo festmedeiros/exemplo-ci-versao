@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NODEJS_VERSION = 'nodejs-14'
+        NODEJS_VERSION = 'nodejs-latest'
     }
 
     stages {
